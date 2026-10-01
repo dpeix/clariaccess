@@ -172,6 +172,59 @@ describe.skipIf(adminUrl === undefined)("schema", () => {
     expect(lead?.consentedAt).toBeInstanceOf(Date);
   });
 
+  it("rejects a lead without consent", async () => {
+    const error = await test.db
+      .insert(leads)
+      .values({ email: "no@consent.fr", consent: false })
+      .then(
+        () => undefined,
+        (e: unknown) => e,
+      );
+    expect(pgErrorCode(error)).toBe("23514");
+  });
+
+  it("stores a single lead per email and audit", async () => {
+    const { audit } = await insertAudit();
+    const values = { email: "dup@b.fr", consent: true, auditId: audit.id };
+    await test.db.insert(leads).values(values);
+    const error = await test.db
+      .insert(leads)
+      .values(values)
+      .then(
+        () => undefined,
+        (e: unknown) => e,
+      );
+    expect(pgErrorCode(error)).toBe("23505");
+  });
+
+  it("starts a lead with no report sent and an audit with no failure reason", async () => {
+    const { audit } = await insertAudit();
+    const [lead] = await test.db
+      .insert(leads)
+      .values({ email: "new@b.fr", consent: true, auditId: audit.id })
+      .returning();
+    expect(lead?.reportSentAt).toBeNull();
+    expect(audit.failureReason).toBeNull();
+  });
+
+  it("only accepts known audit failure reasons", async () => {
+    const { site } = await insertAudit();
+    const error = await test.db
+      .insert(audits)
+      .values({
+        siteId: site.id,
+        type: "free",
+        status: "failed",
+        // Cast: the type already forbids it, the database must too.
+        failureReason: "because" as "scan_failed",
+      })
+      .then(
+        () => undefined,
+        (e: unknown) => e,
+      );
+    expect(pgErrorCode(error)).toBe("22P02");
+  });
+
   it("keeps a lead when its audit is deleted", async () => {
     const { audit } = await insertAudit();
     const [lead] = await test.db

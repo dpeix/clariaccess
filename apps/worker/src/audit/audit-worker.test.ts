@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { RUN_AUDIT_JOB, type JobQueue } from "../queue/job-queue.js";
+import { RUN_AUDIT_JOB, type JobQueue } from "@accessibility/queue";
 import { registerAuditWorker } from "./audit-worker.js";
 
 function fakeQueue() {

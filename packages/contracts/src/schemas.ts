@@ -8,12 +8,21 @@ export const AUDIT_STATUSES = [
   "completed",
   "failed",
 ] as const;
+// Why an audit ended in 'failed', short enough to show to the visitor.
+export const AUDIT_FAILURE_REASONS = [
+  "forbidden_url",
+  "robots_disallowed",
+  "scan_failed",
+] as const;
 export const AUDIT_TYPES = ["free", "scheduled", "manual"] as const;
 
 export const impactSchema = z.enum(IMPACTS).meta({ id: "Impact" });
 export const auditStatusSchema = z
   .enum(AUDIT_STATUSES)
   .meta({ id: "AuditStatus" });
+export const auditFailureReasonSchema = z
+  .enum(AUDIT_FAILURE_REASONS)
+  .meta({ id: "AuditFailureReason" });
 export const auditTypeSchema = z.enum(AUDIT_TYPES).meta({ id: "AuditType" });
 
 export const freeAuditRequestSchema = z
@@ -31,25 +40,39 @@ export const auditSchema = z
     pagesScanned: z.number().int().min(0),
     // Automated score only: manual criteria are not covered (see plan.md §3).
     score: z.number().int().min(0).max(100).nullable(),
+    // Only set when status is 'failed'.
+    failureReason: auditFailureReasonSchema.nullable(),
   })
   .meta({ id: "Audit" });
 
-export const issueSchema = z
+export const reportExampleSchema = z
+  .object({ selector: z.string(), htmlExcerpt: z.string() })
+  .meta({ id: "ReportExample" });
+
+// All occurrences of one rule on the audited page.
+export const reportGroupSchema = z
   .object({
     ruleId: z.string().min(1),
+    title: z.string(),
+    helpUrl: z.url().nullable(),
     impact: impactSchema,
-    selector: z.string(),
-    htmlExcerpt: z.string(),
-    message: z.string(),
+    occurrences: z.number().int().min(1),
+    // A few representative elements, not every occurrence.
+    examples: z.array(reportExampleSchema),
     wcagCriteria: z.array(z.string()),
     rgaaCriteria: z.array(z.string()),
   })
-  .meta({ id: "Issue" });
+  .meta({ id: "ReportGroup" });
 
 export const auditReportSchema = z
   .object({
     audit: auditSchema,
-    issues: z.array(issueSchema),
+    totalIssues: z.number().int().min(0),
+    // Most urgent first.
+    groups: z.array(reportGroupSchema),
+    // Automated testing covers only part of the criteria: the report must say
+    // so (plan.md §3).
+    automatedCoverageNotice: z.string().min(1),
   })
   .meta({ id: "AuditReport" });
 
@@ -73,6 +96,7 @@ export type AuditStatus = z.infer<typeof auditStatusSchema>;
 export type AuditType = z.infer<typeof auditTypeSchema>;
 export type FreeAuditRequest = z.infer<typeof freeAuditRequestSchema>;
 export type Audit = z.infer<typeof auditSchema>;
-export type Issue = z.infer<typeof issueSchema>;
+export type AuditFailureReason = z.infer<typeof auditFailureReasonSchema>;
+export type ReportGroup = z.infer<typeof reportGroupSchema>;
 export type AuditReport = z.infer<typeof auditReportSchema>;
 export type LeadRequest = z.infer<typeof leadRequestSchema>;

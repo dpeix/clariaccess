@@ -224,11 +224,14 @@ export interface components {
             finishedAt: string | null;
             pagesScanned: number;
             score: number | null;
+            failureReason: components["schemas"]["AuditFailureReason"];
         };
         /** @enum {string} */
         AuditType: "free" | "scheduled" | "manual";
         /** @enum {string} */
         AuditStatus: "queued" | "running" | "completed" | "failed";
+        /** @enum {string|null} */
+        AuditFailureReason: "forbidden_url" | "robots_disallowed" | "scan_failed" | null;
         Error: {
             error: string;
             message: string;
@@ -239,19 +242,27 @@ export interface components {
         };
         AuditReport: {
             audit: components["schemas"]["Audit"];
-            issues: components["schemas"]["Issue"][];
+            totalIssues: number;
+            groups: components["schemas"]["ReportGroup"][];
+            automatedCoverageNotice: string;
         };
-        Issue: {
+        ReportGroup: {
             ruleId: string;
+            title: string;
+            /** Format: uri */
+            helpUrl: string | null;
             impact: components["schemas"]["Impact"];
-            selector: string;
-            htmlExcerpt: string;
-            message: string;
+            occurrences: number;
+            examples: components["schemas"]["ReportExample"][];
             wcagCriteria: string[];
             rgaaCriteria: string[];
         };
         /** @enum {string} */
         Impact: "minor" | "moderate" | "serious" | "critical";
+        ReportExample: {
+            selector: string;
+            htmlExcerpt: string;
+        };
         LeadRequest: {
             /** Format: email */
             email: string;

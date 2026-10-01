@@ -2,7 +2,7 @@ import {
   RUN_AUDIT_JOB,
   runAuditPayloadSchema,
   type JobQueue,
-} from "../queue/job-queue.js";
+} from "@accessibility/queue";
 import type { RunAuditOutcome } from "./run-audit.js";
 
 export async function registerAuditWorker(

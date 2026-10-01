@@ -4,7 +4,7 @@ import { registerAuditWorker } from "./audit/audit-worker.js";
 import { runAudit } from "./audit/run-audit.js";
 import { createScanner } from "./audit/scanner.js";
 import { parseEnv } from "./env.js";
-import { PgBossQueue } from "./queue/pg-boss-queue.js";
+import { PgBossQueue } from "@accessibility/queue";
 import { checkRobots } from "./security/robots.js";
 import { assertPublicUrl } from "./security/ssrf.js";
 

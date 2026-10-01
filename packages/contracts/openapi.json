@@ -48,6 +48,9 @@
             ],
             "minimum": 0,
             "maximum": 100
+          },
+          "failureReason": {
+            "$ref": "#/components/schemas/AuditFailureReason"
           }
         },
         "required": [
@@ -58,7 +61,8 @@
           "startedAt",
           "finishedAt",
           "pagesScanned",
-          "score"
+          "score",
+          "failureReason"
         ]
       },
       "AuditType": {
@@ -76,6 +80,18 @@
           "running",
           "completed",
           "failed"
+        ]
+      },
+      "AuditFailureReason": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "forbidden_url",
+          "robots_disallowed",
+          "scan_failed",
+          null
         ]
       },
       "Error": {
@@ -111,36 +127,57 @@
           "audit": {
             "$ref": "#/components/schemas/Audit"
           },
-          "issues": {
+          "totalIssues": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "groups": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Issue"
+              "$ref": "#/components/schemas/ReportGroup"
             }
+          },
+          "automatedCoverageNotice": {
+            "type": "string",
+            "minLength": 1
           }
         },
         "required": [
           "audit",
-          "issues"
+          "totalIssues",
+          "groups",
+          "automatedCoverageNotice"
         ]
       },
-      "Issue": {
+      "ReportGroup": {
         "type": "object",
         "properties": {
           "ruleId": {
             "type": "string",
             "minLength": 1
           },
+          "title": {
+            "type": "string"
+          },
+          "helpUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
           "impact": {
             "$ref": "#/components/schemas/Impact"
           },
-          "selector": {
-            "type": "string"
+          "occurrences": {
+            "type": "integer",
+            "minimum": 1
           },
-          "htmlExcerpt": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
+          "examples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportExample"
+            }
           },
           "wcagCriteria": {
             "type": "array",
@@ -157,10 +194,11 @@
         },
         "required": [
           "ruleId",
+          "title",
+          "helpUrl",
           "impact",
-          "selector",
-          "htmlExcerpt",
-          "message",
+          "occurrences",
+          "examples",
           "wcagCriteria",
           "rgaaCriteria"
         ]
@@ -172,6 +210,21 @@
           "moderate",
           "serious",
           "critical"
+        ]
+      },
+      "ReportExample": {
+        "type": "object",
+        "properties": {
+          "selector": {
+            "type": "string"
+          },
+          "htmlExcerpt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "selector",
+          "htmlExcerpt"
         ]
       },
       "LeadRequest": {

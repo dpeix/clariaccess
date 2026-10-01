@@ -1,0 +1,23 @@
+{
+  "name": "@accessibility/queue",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "pg-boss": "12.35.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@accessibility/db": "workspace:*",
+    "@types/node": "26.6.3",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
+  }
+}

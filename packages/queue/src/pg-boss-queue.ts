@@ -6,6 +6,8 @@ export interface PgBossQueueOptions {
   retryDelaySeconds?: number;
   // How long a job may run before the queue considers it lost and retries it.
   jobExpireSeconds?: number;
+  // Overrides for one queue by name: its retry policy rarely matches the rest.
+  queueOptions?: Record<string, Omit<PgBossQueueOptions, "queueOptions">>;
 }
 
 export class PgBossQueue implements JobQueue {
@@ -47,10 +49,11 @@ export class PgBossQueue implements JobQueue {
 
   async #ensureQueue(name: string): Promise<void> {
     if (this.#queues.has(name)) return;
+    const options = { ...this.#options, ...this.#options.queueOptions?.[name] };
     await this.#boss.createQueue(name, {
-      retryLimit: this.#options.retryLimit ?? 2,
-      retryDelay: this.#options.retryDelaySeconds ?? 30,
-      expireInSeconds: this.#options.jobExpireSeconds ?? 600,
+      retryLimit: options.retryLimit ?? 2,
+      retryDelay: options.retryDelaySeconds ?? 30,
+      expireInSeconds: options.jobExpireSeconds ?? 600,
     });
     this.#queues.add(name);
   }

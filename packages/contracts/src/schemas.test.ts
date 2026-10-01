@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  AUDIT_FAILURE_REASONS,
   AUDIT_STATUSES,
   AUDIT_TYPES,
   IMPACTS,
@@ -25,6 +26,11 @@ describe("shared enums", () => {
       "failed",
     ]);
     expect(AUDIT_TYPES).toEqual(["free", "scheduled", "manual"]);
+    expect(AUDIT_FAILURE_REASONS).toEqual([
+      "forbidden_url",
+      "robots_disallowed",
+      "scan_failed",
+    ]);
   });
 
   it("rejects an impact outside the enum", () => {
@@ -103,6 +109,7 @@ describe("auditSchema and auditReportSchema", () => {
     finishedAt: "2026-10-01T10:00:30.000Z",
     pagesScanned: 1,
     score: 82,
+    failureReason: null,
   };
 
   it("accepts a completed audit", () => {
@@ -128,21 +135,61 @@ describe("auditSchema and auditReportSchema", () => {
     );
   });
 
-  it("accepts a report with its issues", () => {
-    const report = {
-      audit,
-      issues: [
-        {
-          ruleId: "image-alt",
-          impact: "critical",
-          selector: "img.hero",
-          htmlExcerpt: '<img src="a.png">',
-          message: "Images must have alternate text",
-          wcagCriteria: ["1.1.1"],
-          rgaaCriteria: ["1.1"],
-        },
-      ],
+  it("accepts a failed audit with its reason and rejects an unknown one", () => {
+    const failed = {
+      ...audit,
+      status: "failed",
+      score: null,
+      failureReason: "robots_disallowed",
     };
+    expect(auditSchema.safeParse(failed).success).toBe(true);
+    expect(
+      auditSchema.safeParse({ ...failed, failureReason: "oops" }).success,
+    ).toBe(false);
+  });
+
+  const group = {
+    ruleId: "image-alt",
+    title: "Images must have alternate text",
+    helpUrl: "https://dequeuniversity.com/rules/axe/4.13/image-alt",
+    impact: "critical",
+    occurrences: 3,
+    examples: [{ selector: "img.hero", htmlExcerpt: '<img src="a.png">' }],
+    wcagCriteria: ["1.1.1"],
+    rgaaCriteria: ["1.1"],
+  };
+  const report = {
+    audit,
+    totalIssues: 3,
+    groups: [group],
+    automatedCoverageNotice: "Seule une partie des critères est automatisable.",
+  };
+
+  it("accepts a report with grouped issues and the coverage notice", () => {
     expect(auditReportSchema.safeParse(report).success).toBe(true);
+  });
+
+  it("accepts a clean report with no group and a rule without help link", () => {
+    expect(
+      auditReportSchema.safeParse({ ...report, totalIssues: 0, groups: [] })
+        .success,
+    ).toBe(true);
+    expect(
+      auditReportSchema.safeParse({
+        ...report,
+        groups: [{ ...group, helpUrl: null }],
+      }).success,
+    ).toBe(true);
+  });
+
+  it("requires the coverage notice and a positive occurrence count", () => {
+    const withoutNotice = { audit, totalIssues: 3, groups: [group] };
+    expect(auditReportSchema.safeParse(withoutNotice).success).toBe(false);
+    expect(
+      auditReportSchema.safeParse({
+        ...report,
+        groups: [{ ...group, occurrences: 0 }],
+      }).success,
+    ).toBe(false);
   });
 });

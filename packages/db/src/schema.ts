@@ -11,12 +11,22 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { AUDIT_STATUSES, AUDIT_TYPES, IMPACTS } from "@accessibility/contracts";
+import {
+  AUDIT_FAILURE_REASONS,
+  AUDIT_STATUSES,
+  AUDIT_TYPES,
+  IMPACTS,
+} from "@accessibility/contracts";
 
 export const auditTypeEnum = pgEnum("audit_type", AUDIT_TYPES);
 export const auditStatusEnum = pgEnum("audit_status", AUDIT_STATUSES);
+export const auditFailureReasonEnum = pgEnum(
+  "audit_failure_reason",
+  AUDIT_FAILURE_REASONS,
+);
 export const impactEnum = pgEnum("impact", IMPACTS);
 export const ruleSourceEnum = pgEnum("rule_source", ["axe", "manual"]);
 export const wcagLevelEnum = pgEnum("wcag_level", ["A", "AA", "AAA"]);
@@ -80,6 +90,8 @@ export const audits = pgTable(
     status: auditStatusEnum("status").notNull().default("queued"),
     startedAt: timestamp("started_at", { withTimezone: true }),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
+    // Set only when status is 'failed'.
+    failureReason: auditFailureReasonEnum("failure_reason"),
     engineVersion: text("engine_version"),
     // Automated score only; null until the audit completes.
     score: integer("score"),
@@ -166,7 +178,17 @@ export const leads = pgTable(
       .defaultNow(),
     source: text("source"),
     utm: jsonb("utm"),
+    // Set once the report email went out, so a retried job does not resend it.
+    reportSentAt: timestamp("report_sent_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [index("leads_email_idx").on(t.email)],
+  (t) => [
+    index("leads_email_idx").on(t.email),
+    // One lead per visitor and audit: a repeated submission must not send the
+    // report again.
+    uniqueIndex("leads_email_audit_idx").on(t.email, t.auditId),
+    // A lead is only valid with consent; the API checks it, the database
+    // guarantees it.
+    check("leads_consent_given", sql`${t.consent} IS TRUE`),
+  ],
 );

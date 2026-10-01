@@ -3,7 +3,7 @@ import {
   createTestDatabase,
   type TestDatabase,
 } from "@accessibility/db/test-helpers";
-import { adminDatabaseUrl } from "../test/integration.js";
+import { adminDatabaseUrl } from "./integration.js";
 import { PgBossQueue } from "./pg-boss-queue.js";
 
 const adminUrl = adminDatabaseUrl();
@@ -66,5 +66,27 @@ describe.skipIf(adminUrl === undefined)("PgBossQueue", () => {
       received.push(payload);
     });
     expect(await waitFor(() => received[0])).toEqual({ n: 2 });
+  });
+
+  it("applies the options of a given queue instead of the defaults", async () => {
+    const received: unknown[] = [];
+    const custom = new PgBossQueue(test.url, {
+      retryLimit: 0,
+      queueOptions: { "test-custom": { retryLimit: 1, retryDelaySeconds: 1 } },
+    });
+    await custom.start();
+    try {
+      let attempts = 0;
+      await custom.work("test-custom", async (payload) => {
+        attempts += 1;
+        if (attempts === 1) throw new Error("transient failure");
+        received.push(payload);
+      });
+      await custom.enqueue("test-custom", { n: 3 });
+      expect(await waitFor(() => received[0])).toEqual({ n: 3 });
+      expect(attempts).toBe(2);
+    } finally {
+      await custom.stop();
+    }
   });
 });

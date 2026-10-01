@@ -168,3 +168,5 @@ export function lookupAxeRule(axeRuleId: string): RuleLookup {
     rgaaCriteria: entry.rgaa ?? [],
   };
 }
+
+export { computeScore, type ScoreImpact } from "./score.js";

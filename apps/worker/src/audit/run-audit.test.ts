@@ -22,6 +22,7 @@ import {
   createTestDatabase,
   type TestDatabase,
 } from "@accessibility/db/test-helpers";
+import { computeScore } from "@accessibility/rules";
 import { adminDatabaseUrl } from "../test/integration.js";
 import { UrlNotAllowedError } from "../security/ssrf.js";
 import { runAudit, type RunAuditDeps } from "./run-audit.js";
@@ -117,6 +118,15 @@ describe.skipIf(adminUrl === undefined)("runAudit", () => {
     expect(done.startedAt).not.toBeNull();
     expect(done.finishedAt).not.toBeNull();
     expect(done.engineVersion).toMatch(/^axe-core@4\.13\.0\+rules@/);
+    expect(done.failureReason).toBeNull();
+    // Three issues, all 'serious'.
+    expect(done.score).toBe(
+      computeScore([
+        { impact: "serious" },
+        { impact: "serious" },
+        { impact: "serious" },
+      ]),
+    );
 
     const stored = await test.db
       .select()
@@ -178,6 +188,8 @@ describe.skipIf(adminUrl === undefined)("runAudit", () => {
     expect(scan).not.toHaveBeenCalled();
     const row = await auditRow(audit.id);
     expect(row.status).toBe("failed");
+    expect(row.failureReason).toBe("robots_disallowed");
+    expect(row.score).toBeNull();
     expect(row.finishedAt).not.toBeNull();
     expect(log.warn).toHaveBeenCalledWith(
       expect.stringContaining("disallowed by robots.txt"),
@@ -193,7 +205,15 @@ describe.skipIf(adminUrl === undefined)("runAudit", () => {
       );
     };
     await expect(runAudit(deps({ scan }), audit.id)).resolves.toBe("failed");
-    expect((await auditRow(audit.id)).status).toBe("failed");
+    const row = await auditRow(audit.id);
+    expect(row.status).toBe("failed");
+    expect(row.failureReason).toBe("forbidden_url");
+  });
+
+  it("scores 100 when the page has no issue", async () => {
+    const { audit } = await createAudit();
+    await runAudit(deps(), audit.id);
+    expect((await auditRow(audit.id)).score).toBe(100);
   });
 
   it("fails and stores nothing when the scan crashes", async () => {
@@ -202,6 +222,7 @@ describe.skipIf(adminUrl === undefined)("runAudit", () => {
       throw new Error("browser crashed");
     };
     await expect(runAudit(deps({ scan }), audit.id)).resolves.toBe("failed");
+    expect((await auditRow(audit.id)).failureReason).toBe("scan_failed");
     expect(log.error).toHaveBeenCalledWith(
       expect.stringContaining("browser crashed"),
     );

@@ -36,6 +36,8 @@ docker compose up -d --wait # PostgreSQL sur 127.0.0.1:5432
 
 Les tests de `packages/db` ont besoin de PostgreSQL (`docker compose up -d --wait`) : ils créent une base jetable par fichier de test, sans toucher à la base de développement. Sans `DATABASE_URL` ils sont ignorés en local et échouent en CI.
 
+Les tests de `apps/api` et `packages/queue` qui ont besoin de PostgreSQL sont ignorés sans `DATABASE_URL` ; `API_INTEGRATION=1` / `QUEUE_INTEGRATION=1` (positionnés par la CI) font échouer leur absence. L'API se lance avec `pnpm --filter @accessibility/api dev` (ou `start`) : `POST /audits/free`, `GET /audits/:id`, `GET /audits/:id/report`, `POST /leads` (contrat dans `packages/contracts/openapi.json`). Les emails de rapport partent par SMTP ; en local, Mailpit (`docker compose up -d --wait`) les capture sur http://127.0.0.1:8025. Lancer aussi le worker, sinon les audits restent en attente.
+
 Les tests de `apps/worker` qui ont besoin de PostgreSQL ou de Chromium sont ignorés s'ils sont absents (`pnpm --filter @accessibility/worker exec playwright install chromium` pour le navigateur). Avec `WORKER_INTEGRATION=1`, leur absence fait échouer les tests : c'est le cas du job `worker` de la CI. Le worker se lance avec `pnpm --filter @accessibility/worker dev` (ou `start`) ; il consomme les jobs `run-audit` créés dans pg-boss et ne scanne que des URL publiques autorisées par robots.txt.
 
 La CI (`.github/workflows/ci.yml`) exécute les mêmes commandes, plus `pnpm audit`.

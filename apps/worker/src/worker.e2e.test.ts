@@ -15,8 +15,7 @@ import {
 import { registerAuditWorker } from "./audit/audit-worker.js";
 import { runAudit } from "./audit/run-audit.js";
 import { createScanner } from "./audit/scanner.js";
-import { RUN_AUDIT_JOB } from "./queue/job-queue.js";
-import { PgBossQueue } from "./queue/pg-boss-queue.js";
+import { PgBossQueue, RUN_AUDIT_JOB } from "@accessibility/queue";
 import { checkRobots } from "./security/robots.js";
 import { UrlNotAllowedError } from "./security/ssrf.js";
 import { adminDatabaseUrl, chromiumAvailable } from "./test/integration.js";

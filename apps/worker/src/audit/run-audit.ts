@@ -7,7 +7,8 @@ import {
   sites,
   type Database,
 } from "@accessibility/db";
-import { RULES_VERSION } from "@accessibility/rules";
+import { RULES_VERSION, computeScore } from "@accessibility/rules";
+import type { AuditFailureReason } from "@accessibility/contracts";
 import type { RobotsDecision } from "../security/robots.js";
 import { UrlNotAllowedError } from "../security/ssrf.js";
 import { normalizeViolations, type NormalizeResult } from "./normalize.js";
@@ -74,7 +75,7 @@ export async function runAudit(
     const robots = await deps.checkRobots(url);
     if (!robots.allowed) {
       log.warn(`audit ${auditId}: refused, ${robots.reason}`);
-      return await fail(db, auditId);
+      return await fail(db, auditId, "robots_disallowed");
     }
     scan = await deps.scan(url);
     normalized = normalizeViolations(scan.violations, {
@@ -86,7 +87,11 @@ export async function runAudit(
     const message = `audit ${auditId}: scan failed, ${errorMessage(error)}`;
     if (error instanceof UrlNotAllowedError) log.warn(message);
     else log.error(message);
-    return await fail(db, auditId);
+    return await fail(
+      db,
+      auditId,
+      error instanceof UrlNotAllowedError ? "forbidden_url" : "scan_failed",
+    );
   }
 
   if (normalized.skippedUnknownRules.length > 0) {
@@ -131,6 +136,7 @@ export async function runAudit(
         status: "completed",
         finishedAt: now,
         pagesScanned: 1,
+        score: computeScore(normalized.issues),
         engineVersion: `axe-core@${scan.axeVersion}+rules@${RULES_VERSION}`,
       })
       .where(eq(audits.id, auditId));
@@ -140,10 +146,14 @@ export async function runAudit(
   return "completed";
 }
 
-async function fail(db: Database, auditId: string): Promise<"failed"> {
+async function fail(
+  db: Database,
+  auditId: string,
+  failureReason: AuditFailureReason,
+): Promise<"failed"> {
   await db
     .update(audits)
-    .set({ status: "failed", finishedAt: new Date() })
+    .set({ status: "failed", failureReason, finishedAt: new Date() })
     .where(eq(audits.id, auditId));
   return "failed";
 }

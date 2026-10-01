@@ -13,12 +13,12 @@
   "dependencies": {
     "@accessibility/contracts": "workspace:*",
     "@accessibility/db": "workspace:*",
+    "@accessibility/queue": "workspace:*",
     "@accessibility/rules": "workspace:*",
     "@axe-core/playwright": "4.13.0",
     "axe-core": "4.13.0",
     "drizzle-orm": "0.45.3",
     "ipaddr.js": "2.5.0",
-    "pg-boss": "12.35.1",
     "playwright": "1.63.0",
     "robots-parser": "3.0.1",
     "zod": "4.6.5"
