@@ -36,6 +36,8 @@ docker compose up -d --wait # PostgreSQL sur 127.0.0.1:5432
 
 Les tests de `packages/db` ont besoin de PostgreSQL (`docker compose up -d --wait`) : ils créent une base jetable par fichier de test, sans toucher à la base de développement. Sans `DATABASE_URL` ils sont ignorés en local et échouent en CI.
 
+Les tests de `apps/worker` qui ont besoin de PostgreSQL ou de Chromium sont ignorés s'ils sont absents (`pnpm --filter @accessibility/worker exec playwright install chromium` pour le navigateur). Avec `WORKER_INTEGRATION=1`, leur absence fait échouer les tests : c'est le cas du job `worker` de la CI. Le worker se lance avec `pnpm --filter @accessibility/worker dev` (ou `start`) ; il consomme les jobs `run-audit` créés dans pg-boss et ne scanne que des URL publiques autorisées par robots.txt.
+
 La CI (`.github/workflows/ci.yml`) exécute les mêmes commandes, plus `pnpm audit`.
 
 ## Structure
@@ -44,6 +46,6 @@ La CI (`.github/workflows/ci.yml`) exécute les mêmes commandes, plus `pnpm aud
 apps/site      Astro (site public, SEO)
 apps/app       React + Vite (espace client)
 apps/api       Fastify
-apps/worker    Worker d'audit (Playwright + axe-core à venir)
+apps/worker    Worker d'audit (pg-boss, Playwright + axe-core)
 packages/db  contracts  rules  ui
 ```

@@ -4,6 +4,8 @@ import { createDb, type Database } from "./client.js";
 
 export interface TestDatabase {
   db: Database;
+  // Connection string of the throwaway database (e.g. for pg-boss).
+  url: string;
   close: () => Promise<void>;
 }
 
@@ -33,6 +35,7 @@ export async function createTestDatabase(
 
   return {
     db,
+    url: url.toString(),
     close: async () => {
       await db.$client.end();
       await admin.query(`DROP DATABASE ${name} WITH (FORCE)`);

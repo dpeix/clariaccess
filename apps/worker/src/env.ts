@@ -5,6 +5,15 @@ const envSchema = z.object({
     .enum(["development", "test", "production"])
     .default("development"),
   DATABASE_URL: z.url(),
+  // Wall-clock budget for one audit (robots.txt excluded), navigation and axe included.
+  AUDIT_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
+  // Issues beyond this are dropped; keeps one hostile page from filling the database.
+  AUDIT_MAX_ISSUES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(10_000)
+    .default(2000),
 });
 
 export type Env = z.infer<typeof envSchema>;

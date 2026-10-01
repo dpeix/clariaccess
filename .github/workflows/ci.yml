@@ -78,3 +78,37 @@ jobs:
       # (porcelain also catches a newly generated, uncommitted file).
       - run: pnpm --filter @accessibility/db db:generate
       - run: test -z "$(git status --porcelain packages/db/drizzle)"
+
+  worker:
+    # The audit pipeline runs for real: pg-boss and the db tests on Postgres,
+    # the scanner and the end-to-end test in Chromium. WORKER_INTEGRATION makes
+    # a missing database or browser a failure instead of a skip.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+      WORKER_INTEGRATION: "1"
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @accessibility/worker exec playwright install --with-deps chromium
+      - run: pnpm --filter @accessibility/worker test
