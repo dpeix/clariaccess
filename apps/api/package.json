@@ -8,13 +8,16 @@
     "start": "tsx --env-file-if-exists=../../.env src/server.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "set-plan": "tsx --env-file-if-exists=../../.env src/billing/set-plan-cli.ts"
   },
   "dependencies": {
     "@accessibility/contracts": "workspace:*",
     "@accessibility/db": "workspace:*",
     "@accessibility/queue": "workspace:*",
     "@accessibility/rules": "workspace:*",
+    "@fastify/cookie": "11.1.2",
+    "@fastify/cors": "11.3.0",
     "@fastify/rate-limit": "11.2.0",
     "drizzle-orm": "0.45.3",
     "fastify": "5.12.5",

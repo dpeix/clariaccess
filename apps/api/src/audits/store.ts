@@ -1,6 +1,15 @@
-import { and, count, eq, gte, isNull, sql } from "drizzle-orm";
-import type { Audit } from "@accessibility/contracts";
-import { audits, issues, rules, sites, type Database } from "@accessibility/db";
+import { and, count, desc, eq, gte, isNull, ne, sql } from "drizzle-orm";
+import type { Audit, AuditPage } from "@accessibility/contracts";
+import {
+  auditPages,
+  audits,
+  issues,
+  pages,
+  rules,
+  sites,
+  startSiteAudit as startAudit,
+  type Database,
+} from "@accessibility/db";
 import type { ReportIssueRow } from "../report/build-report.js";
 
 type AuditRow = typeof audits.$inferSelect;
@@ -104,4 +113,65 @@ export async function countFreeAuditsForHost(
       ),
     );
   return row?.total ?? 0;
+}
+
+// Who may read an audit: free audits have no owner (the unguessable link is
+// the capability); organization audits belong to their site's organization.
+export async function findAuditAccess(
+  db: Database,
+  id: string,
+): Promise<{ orgId: string | null } | null> {
+  const [row] = await db
+    .select({ orgId: sites.orgId })
+    .from(audits)
+    .innerJoin(sites, eq(sites.id, audits.siteId))
+    .where(eq(audits.id, id));
+  return row ?? null;
+}
+
+export async function listAuditPages(
+  db: Database,
+  auditId: string,
+): Promise<AuditPage[]> {
+  return db
+    .select({ url: pages.url, status: auditPages.status })
+    .from(auditPages)
+    .innerJoin(pages, eq(pages.id, auditPages.pageId))
+    .where(eq(auditPages.auditId, auditId))
+    .orderBy(pages.url);
+}
+
+export async function listSiteAudits(
+  db: Database,
+  site: { id: string; baseUrl: string },
+  limit = 50,
+): Promise<Audit[]> {
+  const rows = await db
+    .select()
+    .from(audits)
+    .where(and(eq(audits.siteId, site.id), ne(audits.type, "free")))
+    .orderBy(desc(audits.createdAt), audits.id)
+    .limit(limit);
+  return rows.map((row) => toAudit(row, site.baseUrl));
+}
+
+export type StartSiteAudit =
+  | { kind: "created"; audit: Audit; pageId: string }
+  | { kind: "in_progress" }
+  | { kind: "limit" };
+
+// A customer's manual audit: see startSiteAudit in @accessibility/db.
+export async function startSiteAudit(
+  db: Database,
+  site: { id: string; baseUrl: string },
+  dailyLimit: number,
+): Promise<StartSiteAudit> {
+  const started = await startAudit(db, site, { type: "manual", dailyLimit });
+  return started.kind === "created"
+    ? {
+        kind: "created",
+        audit: toAudit(started.audit, site.baseUrl),
+        pageId: started.pageId,
+      }
+    : started;
 }

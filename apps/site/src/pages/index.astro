@@ -1,17 +1,112 @@
 ---
+import BaseLayout from "../layouts/BaseLayout.astro";
 import { siteConfig } from "../site";
 ---
 
-<!doctype html>
-<html lang={siteConfig.lang}>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{siteConfig.title}</title>
-  </head>
-  <body>
-    <main>
-      <h1>{siteConfig.title}</h1>
-    </main>
-  </body>
-</html>
+<BaseLayout
+  jsonLd={[
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: siteConfig.title,
+      url: Astro.site!.href,
+      inLanguage: siteConfig.lang,
+    },
+  ]}
+>
+  <h1>Votre site est-il accessible ?</h1>
+  <p>
+    Testez gratuitement une page de votre site : nous détectons automatiquement
+    les problèmes d'accessibilité, les classons par priorité et vous indiquons
+    comment les corriger. Résultat en une minute, sans inscription.
+  </p>
+
+  <form id="audit-form" novalidate>
+    <div class="field">
+      <label for="audit-url">Adresse de la page à tester</label>
+      <p id="audit-url-hint">Exemple : https://www.monsite.fr</p>
+      <input
+        id="audit-url"
+        name="url"
+        type="url"
+        required
+        autocomplete="url"
+        aria-describedby="audit-url-hint audit-url-error"
+      />
+      <p id="audit-url-error" class="error" role="alert" hidden></p>
+    </div>
+    <button type="submit">Lancer l'audit gratuit</button>
+  </form>
+  <noscript>
+    <p class="error">
+      JavaScript est nécessaire pour lancer l'audit depuis cette page.
+    </p>
+  </noscript>
+
+  <h2>Ce que l'audit automatisé couvre — et ce qu'il ne couvre pas</h2>
+  <p>
+    Un outil automatique repère environ un tiers des critères d'accessibilité.
+    Le score affiché est un score <strong>automatisé</strong> : il ne vaut pas
+    déclaration de conformité à l'EAA ou au RGAA, qui exige aussi des
+    vérifications manuelles.
+  </p>
+  <p>
+    <a href="/suis-je-concerne/">Êtes-vous concerné par l'EAA ?</a>
+    ·
+    <a href="/guides/">Lire les guides</a>
+  </p>
+</BaseLayout>
+
+<script>
+  import { api } from "../lib/api";
+  import {
+    apiErrorMessage,
+    normalizeAuditUrl,
+    parseUtm,
+  } from "../lib/audit-flow";
+
+  const form = document.querySelector<HTMLFormElement>("#audit-form")!;
+  const input = document.querySelector<HTMLInputElement>("#audit-url")!;
+  const errorBox = document.querySelector<HTMLElement>("#audit-url-error")!;
+  const button = form.querySelector("button")!;
+
+  function showError(message: string) {
+    errorBox.textContent = message;
+    errorBox.hidden = false;
+    input.setAttribute("aria-invalid", "true");
+    input.focus();
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    errorBox.hidden = true;
+    input.removeAttribute("aria-invalid");
+
+    const url = normalizeAuditUrl(input.value);
+    if (url === null) return showError(apiErrorMessage(400));
+
+    button.disabled = true;
+    button.textContent = "Lancement…";
+    try {
+      const { data, response } = await api.POST("/audits/free", {
+        body: { url },
+      });
+      if (data) {
+        // Campaign parameters follow the visitor to the lead form.
+        const next = new URLSearchParams({ id: data.id });
+        for (const [key, value] of Object.entries(
+          parseUtm(window.location.search),
+        )) {
+          next.set(key, value);
+        }
+        window.location.assign(`/audit/?${next.toString()}`);
+        return;
+      }
+      showError(apiErrorMessage(response.status));
+    } catch {
+      showError(apiErrorMessage("network"));
+    }
+    button.disabled = false;
+    button.textContent = "Lancer l'audit gratuit";
+  });
+</script>

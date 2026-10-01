@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "audits_one_active_per_site_idx" ON "audits" USING btree ("site_id") WHERE "audits"."type" <> 'free' AND "audits"."status" IN ('queued', 'running');

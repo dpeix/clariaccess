@@ -1,0 +1,49 @@
+---
+import LegalLayout from "../layouts/LegalLayout.astro";
+import { legal } from "../legal";
+---
+
+<LegalLayout
+  title="Politique de confidentialité"
+  description="Quelles données personnelles nous collectons lors d'un audit gratuit, pourquoi, combien de temps et comment exercer vos droits."
+>
+  <p>Responsable du traitement : {legal.companyName}, {legal.address}.</p>
+
+  <h2>Données collectées et finalités</h2>
+  <ul>
+    <li>
+      <strong>Audit gratuit</strong> : l'adresse de la page que vous soumettez
+      et les résultats de l'analyse. Finalité : réaliser l'audit et afficher le
+      rapport. Base légale : exécution de votre demande.
+    </li>
+    <li>
+      <strong>Envoi du rapport par email</strong> : votre adresse email, la date
+      de votre consentement, la page auditée et, le cas échéant, la campagne
+      d'origine (paramètres <code>utm_</code>). Finalité : vous envoyer le
+      rapport. Base légale : votre consentement, donné en cochant la case du
+      formulaire.
+    </li>
+  </ul>
+  <p>
+    Votre adresse IP est traitée pour limiter les abus (nombre de demandes) et
+    peut apparaître dans les journaux techniques du serveur. Elle n'est pas
+    enregistrée avec vos résultats d'audit.
+  </p>
+
+  <h2>Durée de conservation</h2>
+  <p>{legal.dataRetention}</p>
+
+  <h2>Destinataires et sous-traitants</h2>
+  <ul>
+    <li>Hébergement : {legal.hostName}.</li>
+    <li>Envoi des emails : {legal.mailProvider}.</li>
+  </ul>
+
+  <h2>Vos droits</h2>
+  <p>
+    Vous pouvez accéder à vos données, les rectifier, les effacer, vous opposer
+    à leur traitement ou retirer votre consentement à tout moment en écrivant à
+    {legal.dpoEmail}. Vous pouvez aussi introduire une réclamation auprès de la
+    CNIL (<a href="https://www.cnil.fr/">cnil.fr</a>).
+  </p>
+</LegalLayout>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeScore } from "./score.js";
+import { computeScore, priorityScore } from "./score.js";
 
 const issues = (impact: "minor" | "moderate" | "serious" | "critical", n = 1) =>
   Array.from({ length: n }, () => ({ impact }));
@@ -43,5 +43,34 @@ describe("computeScore", () => {
   it("does not depend on the order of the issues", () => {
     const a = [...issues("minor", 2), ...issues("critical")];
     expect(computeScore(a)).toBe(computeScore([...a].reverse()));
+  });
+});
+
+describe("priorityScore", () => {
+  it("ranks a more severe impact higher on the same number of pages", () => {
+    expect(priorityScore("critical", 1)).toBeGreaterThan(
+      priorityScore("serious", 1),
+    );
+    expect(priorityScore("serious", 1)).toBeGreaterThan(
+      priorityScore("moderate", 1),
+    );
+    expect(priorityScore("moderate", 1)).toBeGreaterThan(
+      priorityScore("minor", 1),
+    );
+  });
+
+  it("grows with the number of pages affected", () => {
+    expect(priorityScore("serious", 5)).toBeGreaterThan(
+      priorityScore("serious", 1),
+    );
+  });
+
+  it("is a positive integer, even for a single minor issue", () => {
+    expect(priorityScore("minor", 1)).toBeGreaterThanOrEqual(1);
+    expect(Number.isInteger(priorityScore("critical", 7))).toBe(true);
+  });
+
+  it("rejects a page count below 1", () => {
+    expect(() => priorityScore("minor", 0)).toThrow();
   });
 });

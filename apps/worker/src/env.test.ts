@@ -10,6 +10,10 @@ describe("parseEnv", () => {
       DATABASE_URL: validEnv.DATABASE_URL,
       AUDIT_TIMEOUT_MS: 60_000,
       AUDIT_MAX_ISSUES: 2000,
+      CRAWL_MAX_PAGES: 25,
+      CRAWL_MAX_DURATION_MS: 600_000,
+      SCAN_TICK_CRON: "*/5 * * * *",
+      SCAN_TICK_BATCH: 20,
     });
   });
 
@@ -23,7 +27,33 @@ describe("parseEnv", () => {
     expect(env.AUDIT_MAX_ISSUES).toBe(500);
   });
 
+  it("reads the crawl limits from the environment", () => {
+    const env = parseEnv({
+      ...validEnv,
+      CRAWL_MAX_PAGES: "5",
+      CRAWL_MAX_DURATION_MS: "120000",
+    });
+    expect(env.CRAWL_MAX_PAGES).toBe(5);
+    expect(env.CRAWL_MAX_DURATION_MS).toBe(120_000);
+  });
+
+  it("reads the scheduler settings from the environment", () => {
+    const env = parseEnv({
+      ...validEnv,
+      SCAN_TICK_CRON: "*/10 * * * *",
+      SCAN_TICK_BATCH: "5",
+    });
+    expect(env.SCAN_TICK_CRON).toBe("*/10 * * * *");
+    expect(env.SCAN_TICK_BATCH).toBe(5);
+  });
+
   it.each([
+    ["SCAN_TICK_BATCH", "0"],
+    ["SCAN_TICK_BATCH", "1000"],
+    ["SCAN_TICK_CRON", ""],
+    ["CRAWL_MAX_PAGES", "0"],
+    ["CRAWL_MAX_PAGES", "500"],
+    ["CRAWL_MAX_DURATION_MS", "-5"],
     ["AUDIT_TIMEOUT_MS", "0"],
     ["AUDIT_TIMEOUT_MS", "abc"],
     ["AUDIT_TIMEOUT_MS", "1000.5"],

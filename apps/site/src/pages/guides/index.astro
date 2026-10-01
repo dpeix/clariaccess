@@ -1,0 +1,41 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const entries = (await getCollection("guides")).sort((a, b) =>
+  a.data.title.localeCompare(b.data.title, "fr"),
+);
+const sections = [
+  { key: "guide", title: "Comprendre la réglementation" },
+  { key: "secteur", title: "Par secteur d'activité" },
+  { key: "modele", title: "Modèles" },
+] as const;
+---
+
+<BaseLayout
+  title="Guides EAA et RGAA"
+  description="Guides pratiques sur l'European Accessibility Act et le RGAA : obligations, secteurs concernés, modèle de déclaration d'accessibilité."
+>
+  <h1>Guides EAA et RGAA</h1>
+  {
+    sections.map((section) => {
+      const items = entries.filter((e) => e.data.section === section.key);
+      return (
+        items.length > 0 && (
+          <section>
+            <h2>{section.title}</h2>
+            <ul>
+              {items.map((entry) => (
+                <li>
+                  <a href={`/guides/${entry.id}/`}>{entry.data.title}</a>
+                  <br />
+                  <span>{entry.data.description}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      );
+    })
+  }
+</BaseLayout>

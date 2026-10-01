@@ -1,0 +1,245 @@
+:root {
+  --text: #1a1a1a;
+  --muted: #4a4a4a;
+  --bg: #ffffff;
+  --surface: #f3f6fb;
+  --brand: #0b3a75;
+  --link: #0b4fb3;
+  --border: #c9d3e3;
+  --danger: #a4161a;
+  --focus: #b35a00;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    sans-serif;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.container {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+a {
+  color: var(--link);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+main:focus {
+  outline: none;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+.site-header {
+  background: var(--brand);
+  color: #fff;
+}
+
+.site-header .container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 2rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.site-header a {
+  color: #fff;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.15rem;
+  text-decoration: none;
+}
+
+ul {
+  padding-left: 1.25rem;
+}
+
+nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+nav a[aria-current="page"] {
+  font-weight: 700;
+  text-underline-offset: 0.3em;
+}
+
+main {
+  padding-top: 1.5rem;
+  padding-bottom: 3rem;
+  min-height: 60vh;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+}
+
+.site-footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 0;
+  color: var(--muted);
+}
+
+.site-footer p {
+  margin-bottom: 0;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+input[type="url"],
+input[type="email"],
+select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  border: 2px solid var(--muted);
+  border-radius: 0.375rem;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button,
+.button {
+  display: inline-block;
+  padding: 0.65rem 1.25rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--brand);
+  border: 2px solid var(--brand);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+button:disabled {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+.error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.notice {
+  background: var(--surface);
+  border-left: 4px solid var(--brand);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+label.inline {
+  display: inline;
+  font-weight: 400;
+}
+
+.issues {
+  padding-left: 1.25rem;
+}
+
+.issues li {
+  margin-bottom: 1.5rem;
+}
+
+pre {
+  overflow-x: auto;
+  background: var(--surface);
+  padding: 0.5rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.breadcrumb li:not(:last-child)::after {
+  content: "›";
+  margin-left: 0.25rem;
+}
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+}
+
+legend {
+  font-weight: 600;
+  padding: 0 0.25rem;
+}
+
+.choice {
+  margin: 0.25rem 0;
+}
+
+.choice label {
+  display: inline;
+  font-weight: 400;
+}

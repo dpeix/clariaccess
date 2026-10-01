@@ -1,0 +1,141 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const questions = [
+  {
+    name: "audience",
+    legend: "À qui s'adresse votre site ou votre offre ?",
+    options: [
+      { value: "consumers", label: "À des particuliers (consommateurs)" },
+      { value: "businesses", label: "Uniquement à des professionnels" },
+      { value: "both", label: "Aux deux" },
+    ],
+  },
+  {
+    name: "offer",
+    legend: "Que proposez-vous ?",
+    options: [
+      { value: "ecommerce", label: "Vente en ligne (commerce électronique)" },
+      { value: "banking", label: "Services bancaires aux consommateurs" },
+      { value: "transport", label: "Transport de voyageurs (billets, réservation)" },
+      { value: "telecom", label: "Communications électroniques" },
+      { value: "media", label: "Accès à des services audiovisuels" },
+      { value: "ebooks", label: "Livres numériques et logiciels de lecture" },
+      { value: "hardware", label: "Produits : terminaux, bornes, smartphones, ordinateurs" },
+      { value: "other", label: "Autre chose" },
+    ],
+  },
+  {
+    name: "size",
+    legend: "Quelle est la taille de votre structure ?",
+    options: [
+      {
+        value: "micro",
+        label:
+          "Moins de 10 personnes et chiffre d'affaires ou bilan de 2 M€ maximum",
+      },
+      { value: "larger", label: "Plus grande" },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title="Suis-je concerné par l'EAA ?"
+  description="Trois questions pour savoir si l'European Accessibility Act s'applique à votre site ou à votre offre, et si l'exemption microentreprise vous concerne."
+>
+  <h1>Suis-je concerné par l'EAA ?</h1>
+  <p>
+    Répondez à trois questions pour une première orientation. Le résultat ne
+    remplace pas un avis juridique.
+  </p>
+
+  <form id="eaa-form" novalidate>
+    {
+      questions.map((question) => (
+        <fieldset>
+          <legend>{question.legend}</legend>
+          {question.options.map((option, index) => (
+            <div class="choice">
+              <input
+                type="radio"
+                id={`${question.name}-${index}`}
+                name={question.name}
+                value={option.value}
+                required
+              />
+              <label for={`${question.name}-${index}`}>{option.label}</label>
+            </div>
+          ))}
+        </fieldset>
+      ))
+    }
+    <p id="eaa-error" class="error" role="alert" hidden>
+      Répondez aux trois questions pour obtenir un résultat.
+    </p>
+    <button type="submit">Voir le résultat</button>
+  </form>
+
+  <div id="eaa-result" role="status" tabindex="-1"></div>
+  <noscript>
+    <p>
+      Sans JavaScript, consultez le <a href="/guides/eaa/">guide EAA</a> pour
+      connaître les produits et services concernés.
+    </p>
+  </noscript>
+
+  <h2>Les repères à connaître</h2>
+  <ul>
+    <li>
+      L'EAA s'applique depuis le <strong>28 juin 2025</strong> à certains
+      produits et services destinés aux consommateurs.
+    </li>
+    <li>
+      Les <strong>microentreprises</strong> de services sont exemptées ; pas
+      les fournisseurs de produits matériels.
+    </li>
+    <li>
+      Détails dans le <a href="/guides/eaa/">guide EAA</a> et le
+      <a href="/guides/rgaa/">guide RGAA</a>.
+    </li>
+  </ul>
+</BaseLayout>
+
+<script>
+  import { assessEaa, type EaaAnswers } from "../lib/eaa-check";
+
+  const form = document.querySelector<HTMLFormElement>("#eaa-form")!;
+  const result = document.querySelector<HTMLElement>("#eaa-result")!;
+  const error = document.querySelector<HTMLElement>("#eaa-error")!;
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const audience = data.get("audience");
+    const offer = data.get("offer");
+    const size = data.get("size");
+    if (!audience || !offer || !size) {
+      error.hidden = false;
+      result.replaceChildren();
+      return;
+    }
+    error.hidden = true;
+
+    const assessment = assessEaa({ audience, offer, size } as EaaAnswers);
+    const title = document.createElement("h2");
+    title.textContent = assessment.title;
+    const explanation = document.createElement("p");
+    explanation.textContent = assessment.explanation;
+    const caveat = document.createElement("p");
+    caveat.className = "notice";
+    caveat.textContent = assessment.caveat;
+    const cta = document.createElement("p");
+    const link = document.createElement("a");
+    link.className = "button";
+    link.href = "/";
+    link.textContent = "Tester mon site gratuitement";
+    cta.append(link);
+    result.replaceChildren(title, explanation, caveat, cta);
+    result.focus();
+  });
+</script>

@@ -1,5 +1,5 @@
 import { PgBoss } from "pg-boss";
-import type { JobQueue } from "./job-queue.js";
+import type { JobQueue, JobScheduler } from "./job-queue.js";
 
 export interface PgBossQueueOptions {
   retryLimit?: number;
@@ -10,7 +10,7 @@ export interface PgBossQueueOptions {
   queueOptions?: Record<string, Omit<PgBossQueueOptions, "queueOptions">>;
 }
 
-export class PgBossQueue implements JobQueue {
+export class PgBossQueue implements JobQueue, JobScheduler {
   readonly #boss: PgBoss;
   readonly #options: PgBossQueueOptions;
   readonly #queues = new Set<string>();
@@ -41,6 +41,15 @@ export class PgBossQueue implements JobQueue {
     await this.#boss.work<unknown>(name, async (jobs) => {
       for (const job of jobs) await handler(job.data);
     });
+  }
+
+  async schedule(
+    name: string,
+    cron: string,
+    payload: object = {},
+  ): Promise<void> {
+    await this.#ensureQueue(name);
+    await this.#boss.schedule(name, cron, payload);
   }
 
   async stop(): Promise<void> {

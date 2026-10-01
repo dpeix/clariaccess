@@ -169,4 +169,30 @@ export function lookupAxeRule(axeRuleId: string): RuleLookup {
   };
 }
 
-export { computeScore, type ScoreImpact } from "./score.js";
+export { computeScore, priorityScore, type ScoreImpact } from "./score.js";
+export {
+  GUIDED_RULE_IDS,
+  remediationGuide,
+  type RemediationGuide,
+} from "./remediation.js";
+export {
+  RGAA_CRITERIA,
+  RGAA_THEMES,
+  RGAA_VERSION,
+  autoCoverage,
+  criteriaOfTheme,
+  criterionById,
+  type RgaaCriterion,
+  type RgaaTheme,
+} from "./rgaa.js";
+export {
+  allowedStatuses,
+  computeCompliance,
+  type AutoFinding,
+  type ComplianceInput,
+  type ComplianceResult,
+  type ComplianceStatus,
+  type CriterionCompliance,
+  type CriterionState,
+  type ManualStatus,
+} from "./compliance.js";

@@ -38,6 +38,18 @@ export async function createTestDatabase(
     url: url.toString(),
     close: async () => {
       await db.$client.end();
+      // Pool.end() resolves before the server has seen every socket close.
+      // Dropping with FORCE in that window kills connections that are still
+      // closing, and each one reports a FATAL 57P01 as an unhandled error.
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        const { rows } = await admin.query<{ open: number }>(
+          "SELECT count(*)::int AS open FROM pg_stat_activity WHERE datname = $1",
+          [name],
+        );
+        if (rows[0]?.open === 0) break;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      // FORCE stays as a safety net for a connection that never leaves.
       await admin.query(`DROP DATABASE ${name} WITH (FORCE)`);
       await admin.end();
     },

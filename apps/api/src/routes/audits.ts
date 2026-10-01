@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
   AUDIT_FAILURE_REASONS,
@@ -12,10 +12,13 @@ import {
   createFreeAudit,
   deleteAudit,
   findAudit,
+  findAuditAccess,
   findReportIssues,
 } from "../audits/store.js";
 import type { AppConfig } from "../app.js";
+import { optionalUser } from "../auth/guard.js";
 import { sendError } from "../http-errors.js";
+import { isMember } from "../orgs/store.js";
 import { buildReport } from "../report/build-report.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -121,9 +124,22 @@ export function registerAuditRoutes(
     },
   );
 
+  // Free audits are read by their link; an organization's audits only by its
+  // members, and everyone else gets the same 404 as for an unknown id.
+  async function mayRead(request: FastifyRequest, auditId: string) {
+    const access = await findAuditAccess(db, auditId);
+    if (access === null) return false;
+    if (access.orgId === null) return true;
+    const user = await optionalUser({ db, config }, request);
+    return user !== null && (await isMember(db, user.id, access.orgId));
+  }
+
   app.get("/audits/:id", async (request, reply) => {
     const params = idParamsSchema.safeParse(request.params);
-    const audit = params.success ? await findAudit(db, params.data.id) : null;
+    const audit =
+      params.success && (await mayRead(request, params.data.id))
+        ? await findAudit(db, params.data.id)
+        : null;
     if (audit === null) {
       return sendError(reply, 404, "not_found", "Audit introuvable.");
     }
@@ -132,7 +148,10 @@ export function registerAuditRoutes(
 
   app.get("/audits/:id/report", async (request, reply) => {
     const params = idParamsSchema.safeParse(request.params);
-    const audit = params.success ? await findAudit(db, params.data.id) : null;
+    const audit =
+      params.success && (await mayRead(request, params.data.id))
+        ? await findAudit(db, params.data.id)
+        : null;
     if (audit === null) {
       return sendError(reply, 404, "not_found", "Audit introuvable.");
     }

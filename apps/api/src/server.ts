@@ -1,11 +1,16 @@
 import { createDb } from "@accessibility/db";
 import {
   PgBossQueue,
+  RENDER_STATEMENT_PDF_JOB,
+  RENDER_STATEMENT_PDF_QUEUE_OPTIONS,
+  SEND_ALERT_JOB,
+  SEND_ALERT_QUEUE_OPTIONS,
   SEND_REPORT_QUEUE_OPTIONS,
   SEND_REPORT_JOB,
 } from "@accessibility/queue";
 import { buildApp } from "./app.js";
 import { parseEnv } from "./env.js";
+import { registerSendAlertWorker } from "./jobs/send-alert.js";
 import { registerSendReportWorker } from "./jobs/send-report.js";
 import { createSmtpMailer } from "./mail/nodemailer-mailer.js";
 
@@ -13,14 +18,21 @@ const env = parseEnv(process.env);
 
 const db = createDb(env.DATABASE_URL);
 const queue = new PgBossQueue(env.DATABASE_URL, {
-  queueOptions: { [SEND_REPORT_JOB]: SEND_REPORT_QUEUE_OPTIONS },
+  queueOptions: {
+    [SEND_REPORT_JOB]: SEND_REPORT_QUEUE_OPTIONS,
+    [SEND_ALERT_JOB]: SEND_ALERT_QUEUE_OPTIONS,
+    [RENDER_STATEMENT_PDF_JOB]: RENDER_STATEMENT_PDF_QUEUE_OPTIONS,
+  },
 });
 await queue.start();
+
+const mailer = createSmtpMailer(env.SMTP_URL, env.MAIL_FROM);
 
 const app = buildApp({
   db,
   queue,
   logger: true,
+  mailer,
   config: {
     ipRateLimit: {
       max: env.RATE_LIMIT_IP_MAX,
@@ -28,13 +40,30 @@ const app = buildApp({
     },
     domainDailyAuditLimit: env.DOMAIN_DAILY_AUDIT_LIMIT,
     trustProxy: env.TRUST_PROXY,
+    // PUBLIC_SITE_URL may carry a path or trailing slash; CORS wants the origin.
+    corsOrigin: new URL(env.PUBLIC_SITE_URL).origin,
+    appOrigin: new URL(env.APP_URL).origin,
+    secureCookies: env.NODE_ENV === "production",
+    loginRateLimit: {
+      max: env.LOGIN_RATE_LIMIT_MAX,
+      windowSeconds: env.LOGIN_RATE_LIMIT_WINDOW_SECONDS,
+    },
+    loginEmailsPerAddressPerHour: 5,
+    siteDailyAuditLimit: env.SITE_DAILY_AUDIT_LIMIT,
   },
 });
 
 await registerSendReportWorker(queue, {
   db,
-  mailer: createSmtpMailer(env.SMTP_URL, env.MAIL_FROM),
+  mailer,
   publicSiteUrl: env.PUBLIC_SITE_URL,
+  log: app.log,
+});
+
+await registerSendAlertWorker(queue, {
+  db,
+  mailer,
+  appUrl: env.APP_URL,
   log: app.log,
 });
 

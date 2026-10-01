@@ -29,7 +29,13 @@ export interface ScanResult {
   finalUrl: string;
   // Requests the guard refused (subresources only: a refused document throws).
   blockedRequests: string[];
+  // http(s) links of the rendered page, absolute and deduplicated: what a
+  // crawl follows next. Scope (same site, robots.txt) is the caller's call.
+  links: string[];
 }
+
+// A hostile page could list millions of links.
+const MAX_LINKS = 500;
 
 export type Scan = (url: URL) => Promise<ScanResult>;
 
@@ -179,11 +185,23 @@ export function createScanner(browser: Browser, options: ScanOptions): Scan {
     }
 
     const axe = await new AxeBuilder({ page }).analyze();
+    // Resolved by the browser (<base>, relative paths), read after scripts ran.
+    // (A string: this package has no DOM typings, the code runs in the page.)
+    const evaluated: unknown = await page.evaluate(
+      "Array.from(document.querySelectorAll('a[href]'), (a) => a.href)",
+    );
+    const hrefs = Array.isArray(evaluated)
+      ? evaluated.filter((href): href is string => typeof href === "string")
+      : [];
+    const links = [
+      ...new Set(hrefs.filter((href) => /^https?:/i.test(href))),
+    ].slice(0, MAX_LINKS);
     return {
       violations: axe.violations,
       axeVersion: axe.testEngine.version,
       finalUrl: page.url(),
       blockedRequests,
+      links,
     };
   }
 }

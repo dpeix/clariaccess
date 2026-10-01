@@ -30,7 +30,7 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 // RFC 9309 asks crawlers to parse at least 500 KiB.
 const DEFAULT_MAX_BYTES = 512 * 1024;
 
-async function readCapped(
+export async function readCapped(
   response: Response,
   maxBytes: number,
 ): Promise<string> {

@@ -34,6 +34,18 @@ describe.skipIf(!chromiumAvailable())("createScanner (Chromium)", () => {
         );
         return true;
       }
+      if (path === "/links.html") {
+        res.writeHead(200, { "content-type": "text/html" });
+        res.end(
+          `<!doctype html><html lang="fr"><head><title>t</title></head><body><main><h1>t</h1>
+          <a href="/a">a</a> <a href="/a">a again</a> <a href="b?x=1#frag">b</a>
+          <a href="https://other.example/x">external</a> <a href="mailto:x@y.fr">mail</a>
+          <a href="javascript:void(0)">js</a> <a href="#top">top</a> <a>no href</a>
+          <script>document.body.insertAdjacentHTML("beforeend", '<a href="/late">late</a>')</script>
+          </main></body></html>`,
+        );
+        return true;
+      }
       if (path === "/redirect-ok") {
         res.writeHead(302, { location: "/clean.html" }).end();
         return true;
@@ -72,6 +84,21 @@ describe.skipIf(!chromiumAvailable())("createScanner (Chromium)", () => {
     timeoutMs: 15_000,
     guard: allowFixtureHost("127.0.0.1"),
   };
+
+  it("reports the http(s) links of the rendered page, absolute and without duplicates", async () => {
+    const scan = createScanner(browser, options);
+    const result = await scan(new URL(`${server.origin}/links.html`));
+
+    expect(result.links.slice().sort()).toEqual(
+      [
+        `${server.origin}/a`,
+        `${server.origin}/b?x=1#frag`,
+        `${server.origin}/links.html#top`,
+        `${server.origin}/late`,
+        "https://other.example/x",
+      ].sort(),
+    );
+  });
 
   it("reports the known violations of a fixture page", async () => {
     const scan = createScanner(browser, options);

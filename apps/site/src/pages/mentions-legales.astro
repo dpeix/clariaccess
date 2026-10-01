@@ -1,0 +1,33 @@
+---
+import LegalLayout from "../layouts/LegalLayout.astro";
+import { legal } from "../legal";
+---
+
+<LegalLayout
+  title="Mentions légales"
+  description="Éditeur, hébergeur et contact du site : informations légales obligatoires."
+>
+  <h2>Éditeur du site</h2>
+  <p>
+    {legal.companyName} ({legal.legalForm}), SIREN {legal.siren}<br />
+    {legal.address}<br />
+    Directeur de la publication : {legal.publisher}<br />
+    Contact : {legal.contactEmail}
+  </p>
+
+  <h2>Hébergement</h2>
+  <p>{legal.hostName}, {legal.hostAddress}</p>
+
+  <h2>Propriété intellectuelle</h2>
+  <p>
+    Les contenus de ce site sont protégés. Toute reproduction non autorisée est
+    interdite.
+  </p>
+
+  <h2>Limite de responsabilité</h2>
+  <p>
+    Les informations publiées sont générales et ne constituent pas un conseil
+    juridique. Le score d'un audit automatisé ne vaut pas déclaration de
+    conformité à l'EAA ou au RGAA.
+  </p>
+</LegalLayout>

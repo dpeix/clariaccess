@@ -1,0 +1,103 @@
+---
+import "../styles/global.css";
+import { footerNav, mainNav, siteConfig } from "../site";
+import {
+  canonicalUrl,
+  jsonLdScript,
+  organizationJsonLd,
+  pageTitle,
+} from "../lib/seo";
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+  jsonLd?: object[];
+}
+
+const { title, description = siteConfig.description, noindex = false, jsonLd = [] } =
+  Astro.props;
+const fullTitle = pageTitle(title, siteConfig.title);
+const canonical = canonicalUrl(Astro.url.pathname, Astro.site!.href);
+const pathname = Astro.url.pathname;
+const structuredData = [
+  organizationJsonLd({ name: siteConfig.title, url: Astro.site!.href }),
+  ...jsonLd,
+];
+---
+
+<!doctype html>
+<html lang={siteConfig.lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:site_name" content={siteConfig.title} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {
+      !noindex &&
+        structuredData.map((data) => (
+          <script type="application/ld+json" set:html={jsonLdScript(data)} />
+        ))
+    }
+  </head>
+  <body>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+    <header class="site-header">
+      <div class="container">
+        <a class="brand" href="/">{siteConfig.title}</a>
+        <nav aria-label="Navigation principale">
+          <ul>
+            {
+              mainNav.map((item) => (
+                <li>
+                  <a
+                    href={item.href}
+                    aria-current={
+                      pathname === item.href ||
+                      (item.href !== "/" && pathname.startsWith(item.href))
+                        ? "page"
+                        : undefined
+                    }
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main id="contenu" tabindex="-1">
+      <div class="container">
+        <slot />
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <nav aria-label="Informations légales">
+          <ul>
+            {
+              footerNav.map((item) => (
+                <li>
+                  <a href={item.href}>{item.label}</a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+        <p>
+          Informations générales, sans valeur de conseil juridique.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

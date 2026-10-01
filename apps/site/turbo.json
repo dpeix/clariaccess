@@ -1,0 +1,16 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      "env": ["PUBLIC_SITE_URL", "PUBLIC_API_URL", "SITE_ENV"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/.env"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "env": ["SITE_INTEGRATION"]
+    }
+  }
+}

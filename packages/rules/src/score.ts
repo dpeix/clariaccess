@@ -24,3 +24,17 @@ export function computeScore(issues: { impact: ScoreImpact }[]): number {
   );
   return Math.round(100 * Math.exp(-penalty / PENALTY_SCALE));
 }
+
+// Order in which to fix a problem: how bad it is times how widespread it is.
+// Page importance (traffic, key journeys) is not modelled yet.
+export function priorityScore(
+  impact: ScoreImpact,
+  pagesAffected: number,
+): number {
+  if (!Number.isInteger(pagesAffected) || pagesAffected < 1) {
+    throw new Error(
+      `pagesAffected must be a positive integer: ${pagesAffected}`,
+    );
+  }
+  return IMPACT_WEIGHT[impact] * pagesAffected;
+}

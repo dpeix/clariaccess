@@ -68,10 +68,13 @@ async function sendReport(deps: SendReportDeps, leadId: string): Promise<void> {
   }
 
   const report = buildReport(audit, await findReportIssues(db, audit.id));
-  const reportUrl = new URL(`/audit/${audit.id}`, deps.publicSiteUrl).href;
+  // The public site is static: one /audit/ page that reads the id from the
+  // query, since ids cannot be pre-rendered.
+  const reportUrl = new URL("/audit/", deps.publicSiteUrl);
+  reportUrl.searchParams.set("id", audit.id);
   await mailer.send({
     to: lead.email,
-    ...renderReportEmail(report, reportUrl),
+    ...renderReportEmail(report, reportUrl.href),
   });
 
   await db

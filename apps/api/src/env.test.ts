@@ -6,6 +6,7 @@ const validEnv = {
   SMTP_URL: "smtp://localhost:1025",
   MAIL_FROM: "audit@example.fr",
   PUBLIC_SITE_URL: "https://www.example.fr",
+  APP_URL: "https://app.example.fr",
 };
 
 describe("parseEnv", () => {
@@ -20,8 +21,17 @@ describe("parseEnv", () => {
       RATE_LIMIT_IP_MAX: 10,
       RATE_LIMIT_IP_WINDOW_SECONDS: 3600,
       DOMAIN_DAILY_AUDIT_LIMIT: 3,
+      LOGIN_RATE_LIMIT_MAX: 10,
+      LOGIN_RATE_LIMIT_WINDOW_SECONDS: 3600,
+      SITE_DAILY_AUDIT_LIMIT: 5,
       ...validEnv,
     });
+  });
+
+  it("requires APP_URL, the origin of the customer app", () => {
+    expect(() => parseEnv({ ...validEnv, APP_URL: undefined })).toThrow(
+      /APP_URL/,
+    );
   });
 
   it("coerces PORT from a string", () => {

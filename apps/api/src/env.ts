@@ -12,6 +12,9 @@ const envSchema = z.object({
   MAIL_FROM: z.email(),
   // Origin of the public site, used for the report link in emails.
   PUBLIC_SITE_URL: z.url(),
+  // Origin of the customer app (apps/app): target of the login link, the only
+  // browser origin allowed to use the signed-in API.
+  APP_URL: z.url(),
   // Only behind a reverse proxy you control: otherwise X-Forwarded-For is
   // client-supplied and would let anyone dodge the per-IP limit.
   TRUST_PROXY: z.stringbool().default(false),
@@ -21,6 +24,15 @@ const envSchema = z.object({
     .int()
     .positive()
     .default(3600),
+  // Login link requests per IP, over the window below.
+  LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
+  LOGIN_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(3600),
+  // Multi-page audits per site over 24 hours (customer accounts).
+  SITE_DAILY_AUDIT_LIMIT: z.coerce.number().int().positive().default(5),
   // Free audits per domain over 24 hours, whoever asks.
   DOMAIN_DAILY_AUDIT_LIMIT: z.coerce.number().int().positive().default(3),
 });

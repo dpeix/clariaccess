@@ -1,3 +1,4 @@
+import { PgBoss } from "pg-boss";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   createTestDatabase,
@@ -88,5 +89,53 @@ describe.skipIf(adminUrl === undefined)("PgBossQueue", () => {
     } finally {
       await custom.stop();
     }
+  });
+
+  describe("schedule", () => {
+    const schedules = async () => {
+      const boss = new PgBoss(test.url);
+      boss.on("error", () => undefined);
+      await boss.start();
+      try {
+        return await boss.getSchedules();
+      } finally {
+        await boss.stop({ graceful: false });
+      }
+    };
+
+    it("registers a recurring job on a cron expression", async () => {
+      await queue.schedule("test-recurring", "*/5 * * * *");
+
+      const found = (await schedules()).filter(
+        (s) => s.name === "test-recurring",
+      );
+      expect(found).toHaveLength(1);
+      expect(found[0]?.cron).toBe("*/5 * * * *");
+    });
+
+    it("can be repeated on every start without duplicating the schedule", async () => {
+      await queue.schedule("test-twice", "*/5 * * * *");
+      await queue.schedule("test-twice", "*/5 * * * *");
+
+      expect(
+        (await schedules()).filter((s) => s.name === "test-twice"),
+      ).toHaveLength(1);
+    });
+
+    it("moves a schedule whose expression changed", async () => {
+      await queue.schedule("test-change", "*/5 * * * *");
+      await queue.schedule("test-change", "*/10 * * * *");
+
+      const found = (await schedules()).filter((s) => s.name === "test-change");
+      expect(found).toHaveLength(1);
+      expect(found[0]?.cron).toBe("*/10 * * * *");
+    });
+
+    it("carries the payload", async () => {
+      await queue.schedule("test-payload", "*/5 * * * *", { kind: "tick" });
+
+      const found = (await schedules()).find((s) => s.name === "test-payload");
+      expect(found?.data).toEqual({ kind: "tick" });
+    });
   });
 });

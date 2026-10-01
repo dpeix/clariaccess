@@ -114,12 +114,12 @@ Critère de fin : sur une branche vierge, `pnpm install && pnpm lint && pnpm typ
 - Auth, organisations, ajout et vérification de domaine, crawl multi-pages, historique et `findings`.
 
 ### Étape 6 — Abonnement et surveillance continue
-- Stripe Billing, webhooks idempotents, plans/quotas.
-- Re-scans planifiés, détection de régressions, alertes email.
-- Plan de correction priorisé (`remediation_tasks`).
+- Plans/quotas en code (Gratuit / Pro). **Paiement reporté** : pas de Stripe pour l'instant (le moyen de paiement n'est pas arrêté) ; le changement de formule est isolé dans `setOrganizationPlan`, le reste (achat, webhooks idempotents, résiliations) est à faire plus tard.
+- Re-scans planifiés, détection de régressions, alertes email (faits).
+- Plan de correction priorisé (`remediation_tasks`) (fait).
 
 ### Étape 7 — Déclaration d'accessibilité et audit manuel
-- `manual_checks` guidés, générateur de déclaration (versionnée, page publique, PDF), FR puis clés UE.
+- `manual_checks` guidés, générateur de déclaration (versionnée, page publique, PDF), FR puis clés UE (fait ; seule la langue française est livrée, clés i18n prêtes).
 
 ### Étape 8 — Prestations de correction
 - Devis, `service_orders`, paiement ponctuel, suivi de livraison.
@@ -134,4 +134,4 @@ Workflow Spécificateur → Développeur → Testeur → Reviewer ; tests écrit
 - Hébergeur Git/CI (GitHub supposé).
 - Choix final Drizzle vs Kysely, Better Auth vs alternative (à trancher à l'étape 1/5 sur vérification des versions et de la maintenance).
 - Hébergeurs précis (Scaleway / Fly / Hetzner) et budget.
-- Tarification et quotas des plans.
+- Tarification des plans (les quotas sont en code ; le prix et le moyen de paiement restent à choisir).

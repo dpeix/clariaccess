@@ -52,6 +52,7 @@ function scanResult(violations: Result[]): ScanResult {
     axeVersion: "4.13.0",
     finalUrl: "https://acme.example/",
     blockedRequests: [],
+    links: [],
   };
 }
 
@@ -152,6 +153,7 @@ describe.skipIf(adminUrl === undefined)("runAudit", () => {
       .from(auditPages)
       .where(eq(auditPages.auditId, audit.id));
     expect(links).toHaveLength(1);
+    expect(links[0]?.status).toBe("done");
   });
 
   it("keeps the same fingerprint for the same problem across audits", async () => {

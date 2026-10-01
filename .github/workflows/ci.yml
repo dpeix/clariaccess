@@ -146,3 +146,41 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @accessibility/api test
+
+  site:
+    # Builds the public site and checks the output (SEO, links, page weight)
+    # and its pages in Chromium with axe (WCAG 2.1 A/AA). SITE_INTEGRATION makes
+    # a missing browser a failure instead of a skip.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SITE_INTEGRATION: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @accessibility/site exec playwright install --with-deps chromium
+      - run: pnpm --filter @accessibility/site test
+
+  app:
+    # Builds the customer app and drives it in Chromium against a simulated
+    # API: every screen is checked with axe (WCAG 2.1 A/AA). APP_INTEGRATION
+    # makes a missing browser a failure instead of a skip.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APP_INTEGRATION: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @accessibility/app exec playwright install --with-deps chromium
+      - run: pnpm --filter @accessibility/app test

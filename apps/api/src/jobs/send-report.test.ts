@@ -71,7 +71,7 @@ describe.skipIf(adminUrl === undefined)("send-report job", () => {
     expect(mailer.sent).toHaveLength(1);
     expect(mailer.sent[0]?.to).toBe("visiteur@example.fr");
     expect(mailer.sent[0]?.text).toContain(
-      `https://www.example.fr/audit/${audit.id}`,
+      `https://www.example.fr/audit/?id=${audit.id}`,
     );
     expect(mailer.sent[0]?.text).toContain("80");
     expect(await reportSentAt(lead.id)).toBeInstanceOf(Date);

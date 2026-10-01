@@ -1,0 +1,73 @@
+---
+import { getCollection, render } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { siteConfig } from "../../site";
+import { articleJsonLd, breadcrumbJsonLd, canonicalUrl } from "../../lib/seo";
+
+export const getStaticPaths = (async () => {
+  const entries = await getCollection("guides");
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const site = Astro.site!.href;
+const url = canonicalUrl(Astro.url.pathname, site);
+const updated = entry.data.updated.toISOString().slice(0, 10);
+const formatted = new Intl.DateTimeFormat("fr-FR", {
+  dateStyle: "long",
+  timeZone: "UTC",
+}).format(entry.data.updated);
+---
+
+<BaseLayout
+  title={entry.data.title}
+  description={entry.data.description}
+  jsonLd={[
+    articleJsonLd({
+      headline: entry.data.title,
+      description: entry.data.description,
+      url,
+      dateModified: updated,
+      publisher: siteConfig.title,
+    }),
+    breadcrumbJsonLd([
+      { name: "Accueil", url: canonicalUrl("/", site) },
+      { name: "Guides", url: canonicalUrl("/guides/", site) },
+      { name: entry.data.title, url },
+    ]),
+  ]}
+>
+  <nav aria-label="Fil d'Ariane">
+    <ol class="breadcrumb">
+      <li><a href="/">Accueil</a></li>
+      <li><a href="/guides/">Guides</a></li>
+      <li aria-current="page">{entry.data.title}</li>
+    </ol>
+  </nav>
+  <article>
+    <h1>{entry.data.title}</h1>
+    <p>
+      <small
+        >Dernière mise à jour : <time datetime={updated}>{formatted}</time
+        ></small
+      >
+    </p>
+    <Content />
+  </article>
+  <aside class="notice" aria-labelledby="cta-title">
+    <h2 id="cta-title">Testez votre site gratuitement</h2>
+    <p>Un audit automatisé de votre page en une minute, sans inscription.</p>
+    <p><a class="button" href="/">Lancer l'audit gratuit</a></p>
+  </aside>
+  <p>
+    <small>
+      Informations générales, sans valeur de conseil juridique. Vérifiez votre
+      situation auprès d'un professionnel du droit ou des sources officielles.
+    </small>
+  </p>
+</BaseLayout>

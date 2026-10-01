@@ -1,0 +1,2 @@
+ALTER TABLE "findings" ADD COLUMN "regressed_audit_id" uuid;--> statement-breakpoint
+ALTER TABLE "findings" ADD CONSTRAINT "findings_regressed_audit_id_audits_id_fk" FOREIGN KEY ("regressed_audit_id") REFERENCES "public"."audits"("id") ON DELETE set null ON UPDATE no action;

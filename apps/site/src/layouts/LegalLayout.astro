@@ -1,0 +1,17 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import { assertLegalComplete, legal } from "../legal";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+// Production builds stop here while src/legal.ts still has placeholders.
+assertLegalComplete(legal, process.env.SITE_ENV);
+---
+
+<BaseLayout {...Astro.props}>
+  <h1>{Astro.props.title}</h1>
+  <slot />
+</BaseLayout>

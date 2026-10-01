@@ -1,0 +1,178 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Résultat de votre audit"
+  description="Résultat de votre audit d'accessibilité : score automatisé, problèmes classés par priorité et rapport à recevoir par email."
+  noindex
+>
+  <h1>Résultat de votre audit</h1>
+  <p id="audit-target"></p>
+  <p id="audit-status" role="status">Chargement…</p>
+  <noscript>
+    <p class="error">JavaScript est nécessaire pour afficher le résultat.</p>
+  </noscript>
+
+  <div id="report"></div>
+
+  <section id="lead" hidden aria-labelledby="lead-title">
+    <h2 id="lead-title">Recevoir le rapport par email</h2>
+    <form id="lead-form" novalidate>
+      <div class="field">
+        <label for="lead-email">Votre adresse email</label>
+        <input
+          id="lead-email"
+          name="email"
+          type="email"
+          required
+          autocomplete="email"
+          aria-describedby="lead-error"
+        />
+      </div>
+      <div class="field">
+        <input id="lead-consent" name="consent" type="checkbox" required />
+        <label for="lead-consent" class="inline">
+          J'accepte de recevoir ce rapport par email et que mon adresse soit
+          conservée pour cet envoi (<a href="/confidentialite/"
+            >politique de confidentialité</a
+          >).
+        </label>
+      </div>
+      <p id="lead-error" class="error" role="alert" hidden></p>
+      <button type="submit">Envoyer le rapport</button>
+    </form>
+    <p id="lead-done" role="status" hidden>
+      Merci : le rapport vous est envoyé par email dans quelques minutes.
+    </p>
+  </section>
+</BaseLayout>
+
+<script>
+  import { api } from "../../lib/api";
+  import {
+    POLL_TIMEOUT_MS,
+    apiErrorMessage,
+    auditProgress,
+    isAuditId,
+    leadErrorMessage,
+    parseUtm,
+    pollDelayMs,
+  } from "../../lib/audit-flow";
+  import { renderReport } from "../../lib/report-dom";
+
+  const params = new URLSearchParams(window.location.search);
+  const status = document.querySelector<HTMLElement>("#audit-status")!;
+  const target = document.querySelector<HTMLElement>("#audit-target")!;
+  const reportBox = document.querySelector<HTMLElement>("#report")!;
+  const lead = document.querySelector<HTMLElement>("#lead")!;
+  const id = params.get("id");
+
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  async function run(auditId: string) {
+    const startedAt = Date.now();
+    for (let attempt = 0; ; attempt += 1) {
+      let audit;
+      try {
+        const { data, response } = await api.GET("/audits/{id}", {
+          params: { path: { id: auditId } },
+        });
+        if (!data) {
+          status.textContent = apiErrorMessage(response.status);
+          return;
+        }
+        audit = data;
+      } catch {
+        status.textContent = apiErrorMessage("network");
+        return;
+      }
+      target.textContent = `Page analysée : ${audit.url}`;
+
+      const progress = auditProgress(audit);
+      status.textContent = progress.message;
+      if (progress.phase === "failed") return;
+      if (progress.phase === "done") break;
+
+      if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
+        status.textContent =
+          "L'analyse prend plus de temps que prévu. Rechargez cette page dans quelques instants.";
+        return;
+      }
+      await sleep(pollDelayMs(attempt));
+    }
+
+    try {
+      const { data, response } = await api.GET("/audits/{id}/report", {
+        params: { path: { id: auditId } },
+      });
+      if (!data) {
+        status.textContent = apiErrorMessage(response.status);
+        return;
+      }
+      renderReport(data, reportBox);
+      lead.hidden = false;
+    } catch {
+      status.textContent = apiErrorMessage("network");
+    }
+  }
+
+  if (isAuditId(id)) {
+    void run(id);
+    wireLeadForm(id);
+  } else {
+    status.textContent =
+      "Lien invalide : il manque l'identifiant de l'audit. Relancez un audit depuis la page d'accueil.";
+  }
+
+  function wireLeadForm(auditId: string) {
+    const form = document.querySelector<HTMLFormElement>("#lead-form")!;
+    const email = document.querySelector<HTMLInputElement>("#lead-email")!;
+    const consent = document.querySelector<HTMLInputElement>("#lead-consent")!;
+    const errorBox = document.querySelector<HTMLElement>("#lead-error")!;
+    const done = document.querySelector<HTMLElement>("#lead-done")!;
+    const button = form.querySelector("button")!;
+
+    function showError(message: string, field: HTMLElement) {
+      errorBox.textContent = message;
+      errorBox.hidden = false;
+      field.focus();
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      errorBox.hidden = true;
+      if (!email.validity.valid || email.value.trim() === "") {
+        return showError("Indiquez une adresse email valide.", email);
+      }
+      if (!consent.checked) {
+        return showError(
+          "Votre consentement est nécessaire pour envoyer le rapport.",
+          consent,
+        );
+      }
+      button.disabled = true;
+      try {
+        const { response } = await api.POST("/leads", {
+          body: {
+            email: email.value.trim(),
+            auditId,
+            consent: true,
+            source: "audit-page",
+            utm: parseUtm(window.location.search),
+          },
+        });
+        if (response.ok) {
+          form.hidden = true;
+          done.hidden = false;
+          return;
+        }
+        showError(leadErrorMessage(response.status), email);
+      } catch {
+        showError(leadErrorMessage("network"), email);
+      }
+      button.disabled = false;
+    });
+  }
+</script>

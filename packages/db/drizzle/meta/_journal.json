@@ -15,6 +15,48 @@
       "when": 1790864047462,
       "tag": "0001_long_wallflower",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790883282581,
+      "tag": "0002_flawless_dakota_north",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790883940853,
+      "tag": "0003_good_doomsday",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790888002917,
+      "tag": "0004_sour_shadow_king",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790888434886,
+      "tag": "0005_mean_maximus",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790888581213,
+      "tag": "0006_nostalgic_swordsman",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790893091868,
+      "tag": "0007_chemical_chimera",
+      "breakpoints": true
     }
   ]
 }

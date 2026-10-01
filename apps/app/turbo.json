@@ -1,0 +1,16 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      "env": ["VITE_API_URL"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/.env"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "env": ["APP_INTEGRATION"]
+    }
+  }
+}

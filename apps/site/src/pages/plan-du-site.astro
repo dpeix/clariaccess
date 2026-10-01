@@ -1,0 +1,48 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { footerNav, mainNav } from "../site";
+
+const guides = (await getCollection("guides")).sort((a, b) =>
+  a.id.localeCompare(b.id),
+);
+---
+
+<BaseLayout
+  title="Plan du site"
+  description="Toutes les pages du site : audit gratuit, questionnaire EAA, guides, pages légales."
+>
+  <h1>Plan du site</h1>
+  <ul>
+    {
+      mainNav
+        .filter((item) => item.href !== "/guides/")
+        .map((item) => (
+          <li>
+            <a href={item.href}>{item.label}</a>
+          </li>
+        ))
+    }
+    <li>
+      <a href="/guides/">Guides</a>
+      <ul>
+        {
+          guides.map((entry) => (
+            <li>
+              <a href={`/guides/${entry.id}/`}>{entry.data.title}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </li>
+    {
+      footerNav
+        .filter((item) => item.href !== "/plan-du-site/")
+        .map((item) => (
+          <li>
+            <a href={item.href}>{item.label}</a>
+          </li>
+        ))
+    }
+  </ul>
+</BaseLayout>

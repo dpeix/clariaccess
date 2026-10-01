@@ -14,6 +14,19 @@ const envSchema = z.object({
     .positive()
     .max(10_000)
     .default(2000),
+  // Pages scanned per multi-page audit, home page included.
+  CRAWL_MAX_PAGES: z.coerce.number().int().positive().max(100).default(25),
+  // Time after which the pages of an audit still waiting are abandoned.
+  CRAWL_MAX_DURATION_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10 * 60 * 1000),
+  // How often the scheduler looks for re-scans that came due (cron, UTC). The
+  // delay of a re-scan is at most this interval.
+  SCAN_TICK_CRON: z.string().min(1).default("*/5 * * * *"),
+  // Re-scans started per tick; the rest wait for the next one.
+  SCAN_TICK_BATCH: z.coerce.number().int().positive().max(200).default(20),
 });
 
 export type Env = z.infer<typeof envSchema>;

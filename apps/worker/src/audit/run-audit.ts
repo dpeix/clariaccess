@@ -30,9 +30,9 @@ export interface RunAuditDeps {
 
 export type RunAuditOutcome = "completed" | "failed" | "skipped";
 
-const MAX_HTML_EXCERPT_LENGTH = 1000;
+export const MAX_HTML_EXCERPT_LENGTH = 1000;
 // Keeps each INSERT well under Postgres' 65535 bind-parameter limit.
-const ISSUE_INSERT_CHUNK = 500;
+export const ISSUE_INSERT_CHUNK = 500;
 // A crashed worker leaves its audit 'running'; the retried job must take over.
 const RUNNABLE = ["queued", "running"] as const;
 
@@ -118,7 +118,9 @@ export async function runAudit(
     // A retried job replaces what a previous attempt may have stored.
     await tx.delete(issues).where(eq(issues.auditId, auditId));
     await tx.delete(auditPages).where(eq(auditPages.auditId, auditId));
-    await tx.insert(auditPages).values({ auditId, pageId: page.id });
+    await tx
+      .insert(auditPages)
+      .values({ auditId, pageId: page.id, status: "done" });
 
     for (let i = 0; i < normalized.issues.length; i += ISSUE_INSERT_CHUNK) {
       await tx.insert(issues).values(
