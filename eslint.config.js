@@ -4,7 +4,15 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/.astro/**", "**/.turbo/**", "**/coverage/**"] },
+  {
+    ignores: [
+      "**/dist/**",
+      "**/.astro/**",
+      "**/.turbo/**",
+      "**/coverage/**",
+      "packages/contracts/src/generated/**",
+    ],
+  },
   js.configs.recommended,
   tseslint.configs.recommended,
   {

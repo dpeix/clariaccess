@@ -1,3 +1,3 @@
-export function hello(): string {
-  return "@accessibility/contracts";
-}
+export * from "./schemas.js";
+export { buildOpenApiDocument } from "./openapi.js";
+export { createApiClient } from "./client.js";

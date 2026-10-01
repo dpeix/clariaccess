@@ -44,10 +44,12 @@ jobs:
       - run: pnpm audit --audit-level high
 
   postgres:
-    # Placeholder for migration tests: packages/db has no schema yet (étape 1).
-    # For now this only proves the Postgres service starts and accepts queries.
+    # Migrations are applied on a real Postgres; the db tests also create
+    # throwaway databases from this server.
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      DATABASE_URL: postgres://ci:ci@localhost:5432/ci
     services:
       postgres:
         image: postgres:17-alpine
@@ -63,4 +65,16 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     steps:
-      - run: psql "postgres://ci:ci@localhost:5432/ci" -c "SELECT 1"
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @accessibility/db db:migrate
+      - run: pnpm --filter @accessibility/db test
+      # Fails if packages/db/src/schema.ts changed without a committed migration
+      # (porcelain also catches a newly generated, uncommitted file).
+      - run: pnpm --filter @accessibility/db db:generate
+      - run: test -z "$(git status --porcelain packages/db/drizzle)"
